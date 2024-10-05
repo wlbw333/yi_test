@@ -51,35 +51,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4  # 拉取代码
-
-      # 下载 Windows 生成的 zip 文件
+  
+      # 下载 Windows 可执行文件
       - name: Download Windows Artifact
         uses: actions/download-artifact@v4
         with:
           name: main_windows_exe
           path: ./windows_artifact  # 下载到 windows_artifact 文件夹
-
-      # 下载 Mac 生成的 zip 文件
+  
+      # 下载 Mac 可执行文件
       - name: Download Mac Artifact
         uses: actions/download-artifact@v4
         with:
           name: main_mac_executable
           path: ./mac_artifact  # 下载到 mac_artifact 文件夹
-
-      # 解压 Windows 可执行文件
-      - name: Unzip Windows Artifact
-        run: unzip windows_artifact/main_windows_exe.zip -d windows_artifact
-
-      # 解压 Mac 可执行文件
-      - name: Unzip Mac Artifact
-        run: unzip mac_artifact/main_mac_executable.zip -d mac_artifact
-
-      # 创建 GitHub Release，包含解压后的可执行文件
+  
+      # 创建 GitHub Release，包含下载的可执行文件
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            windows_artifact/main.exe  # 解压后的 Windows 可执行文件
-            mac_artifact/main  # 解压后的 Mac 可执行文件
+            windows_artifact/main.exe  # 下载后的 Windows 可执行文件路径
+            mac_artifact/main  # 下载后的 Mac 可执行文件路径
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 使用 GitHub secrets 中的 token 来创建 release
