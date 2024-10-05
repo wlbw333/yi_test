@@ -1,0 +1,85 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - "v*"  # 检测任何以 "v" 开头的标签，例如 "v0.0.1"
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4  # 拉取代码
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'  # 设置 Python 版本
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip  # 升级 pip
+          pip install pyinstaller  # 安装 pyinstaller
+      - name: Build Windows executable
+        run: pyinstaller --onefile main.py --distpath windows_dist  # 设置 Windows 可执行文件的输出路径
+      - name: Upload Windows executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: main_windows_exe
+          path: windows_dist/main.exe  # 上传生成的 Windows 可执行文件
+
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4  # 拉取代码
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'  # 设置 Python 版本
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip  # 升级 pip
+          pip install pyinstaller  # 安装 pyinstaller
+      - name: Build Mac executable
+        run: pyinstaller --onefile main.py --distpath mac_dist  # 设置 macOS 可执行文件的输出路径
+      - name: Upload Mac executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: main_mac_executable
+          path: mac_dist/main  # 上传生成的 macOS 可执行文件
+
+  release:
+    needs: [build-windows, build-mac]  # 等待 Windows 和 Mac 的打包完成
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4  # 拉取代码
+
+      # 下载 Windows 可执行文件
+      - name: Download Windows Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: main_windows_exe
+          path: ./windows_dist  # 下载到 windows_dist 文件夹
+
+      # 解压 Windows 可执行文件
+      - name: Unzip Windows Artifact
+        run: unzip windows_dist/main_windows_exe.zip -d windows_dist
+
+      # 下载 Mac 可执行文件
+      - name: Download Mac Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: main_mac_executable
+          path: ./mac_dist  # 下载到 mac_dist 文件夹
+
+      # 解压 Mac 可执行文件
+      - name: Unzip Mac Artifact
+        run: unzip mac_dist/main_mac_executable.zip -d mac_dist
+
+      # 创建 GitHub Release，包含下载的可执行文件
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            windows_dist/main.exe  # 解压后的 Windows 可执行文件路径
+            mac_dist/main  # 解压后的 Mac 可执行文件路径
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 使用 GitHub secrets 中的 token 来创建 release
