@@ -1,0 +1,88 @@
+name: Build Executables for Multiple OS
+
+on:
+  push:
+    tags:
+      - "v*"  # 当推送带有版本标签的提交时触发
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+
+    - name: Build Windows executable
+      run: |
+        pyinstaller --onefile main.py  # 使用 main.py 作为主程序文件
+
+    - name: Upload Windows artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: main_windows_exe
+        path: dist/main.exe  # Windows 下的可执行文件路径
+
+  build-mac:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+
+    - name: Build macOS executable
+      run: |
+        pyinstaller --onefile main.py  # 使用 main.py 作为主程序文件
+
+    - name: Upload macOS artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: main_mac_executable
+        path: dist/main  # macOS 下的可执行文件路径
+
+  release:
+    needs: [build-windows, build-mac]  # 等待上面两个任务完成后再执行发布
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Download Windows artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: main_windows_exe
+
+    - name: Download macOS artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: main_mac_executable
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          dist/main.exe  # Windows 可执行文件
+          dist/main  # macOS 可执行文件
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
