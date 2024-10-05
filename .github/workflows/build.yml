@@ -19,12 +19,12 @@ jobs:
           python -m pip install --upgrade pip  # 升级 pip
           pip install pyinstaller  # 安装 pyinstaller
       - name: Build Windows executable
-        run: pyinstaller --onefile main.py  # 打包 main.py 为单文件可执行文件
+        run: pyinstaller --onefile main.py --distpath windows_dist  # 设置 Windows 可执行文件的输出路径
       - name: Upload Windows executable
         uses: actions/upload-artifact@v4
         with:
           name: main_windows_exe
-          path: dist/main.exe  # 上传生成的 Windows 可执行文件
+          path: windows_dist/main.exe  # 上传生成的 Windows 可执行文件
 
   build-mac:
     runs-on: macos-latest
@@ -39,39 +39,39 @@ jobs:
           python -m pip install --upgrade pip  # 升级 pip
           pip install pyinstaller  # 安装 pyinstaller
       - name: Build Mac executable
-        run: pyinstaller --onefile main.py  # 打包 main.py 为单文件可执行文件
+        run: pyinstaller --onefile main.py --distpath mac_dist  # 设置 macOS 可执行文件的输出路径
       - name: Upload Mac executable
         uses: actions/upload-artifact@v4
         with:
           name: main_mac_executable
-          path: dist/main  # 上传生成的 macOS 可执行文件
+          path: mac_dist/main  # 上传生成的 macOS 可执行文件
 
   release:
     needs: [build-windows, build-mac]  # 等待 Windows 和 Mac 的打包完成
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4  # 拉取代码
-  
+
       # 下载 Windows 可执行文件
       - name: Download Windows Artifact
         uses: actions/download-artifact@v4
         with:
           name: main_windows_exe
-          path: ./windows_artifact  # 下载到 windows_artifact 文件夹
-  
+          path: ./windows_dist  # 下载到 windows_dist 文件夹
+
       # 下载 Mac 可执行文件
       - name: Download Mac Artifact
         uses: actions/download-artifact@v4
         with:
           name: main_mac_executable
-          path: ./mac_artifact  # 下载到 mac_artifact 文件夹
-  
+          path: ./mac_dist  # 下载到 mac_dist 文件夹
+
       # 创建 GitHub Release，包含下载的可执行文件
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            windows_artifact/main.exe  # 下载后的 Windows 可执行文件路径
-            mac_artifact/main  # 下载后的 Mac 可执行文件路径
+            windows_dist/main.exe  # 下载后的 Windows 可执行文件路径
+            mac_dist/main  # 下载后的 Mac 可执行文件路径
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 使用 GitHub secrets 中的 token 来创建 release
