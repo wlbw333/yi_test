@@ -82,4 +82,4 @@ jobs:
             windows_artifact/main.exe  # 解压后的 Windows 可执行文件
             mac_artifact/main  # 解压后的 Mac 可执行文件
         env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 使用 GitHub secrets 中的 token 来创建 release
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 使用 GitHub secrets 中的 token 来创建 release
