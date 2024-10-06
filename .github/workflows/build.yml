@@ -16,8 +16,8 @@ jobs:
           python-version: '3.x'  # 设置 Python 版本
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip  # 升级 pip
-          pip install pyinstaller  # 安装 pyinstaller
+          python -m pip install --upgrade pip
+          pip install pyinstaller
       - name: Build Windows executable
         run: pyinstaller --onefile main.py --distpath windows_dist  # 设置 Windows 可执行文件的输出路径
       - name: Upload Windows executable
@@ -36,8 +36,8 @@ jobs:
           python-version: '3.x'  # 设置 Python 版本
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip  # 升级 pip
-          pip install pyinstaller  # 安装 pyinstaller
+          python -m pip install --upgrade pip
+          pip install pyinstaller
       - name: Build Mac executable
         run: pyinstaller --onefile main.py --distpath mac_dist  # 设置 macOS 可执行文件的输出路径
       - name: Upload Mac executable
@@ -47,39 +47,43 @@ jobs:
           path: mac_dist/main  # 上传生成的 macOS 可执行文件
 
   release:
-    needs: [build-windows, build-mac]  # 等待 Windows 和 Mac 的打包完成
+    needs: [build-windows, build-mac]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4  # 拉取代码
+      - uses: actions/checkout@v4
 
       # 下载 Windows 可执行文件
       - name: Download Windows Artifact
         uses: actions/download-artifact@v4
         with:
           name: main_windows_exe
-          path: ./windows_dist  # 下载到 windows_dist 文件夹
-
-      # 解压 Windows 可执行文件
-      - name: Unzip Windows Artifact
-        run: unzip windows_dist/main_windows_exe.zip -d windows_dist
+          path: ./windows_dist
 
       # 下载 Mac 可执行文件
       - name: Download Mac Artifact
         uses: actions/download-artifact@v4
         with:
           name: main_mac_executable
-          path: ./mac_dist  # 下载到 mac_dist 文件夹
+          path: ./mac_dist
 
-      # 解压 Mac 可执行文件
-      - name: Unzip Mac Artifact
-        run: unzip mac_dist/main_mac_executable.zip -d mac_dist
+      # 添加 Mac 可执行文件的执行权限
+      - name: Set execute permission for Mac executable
+        run: chmod +x mac_dist/main
 
-      # 创建 GitHub Release，包含下载的可执行文件
+      # 将 Mac 可执行文件压缩成 .tar.gz，带有项目名和版本号
+      - name: Compress Mac executable to .tar.gz
+        run: tar -czvf yi_test_mac_${{ github.ref_name }}.tar.gz -C mac_dist main
+
+      # 将 Windows 可执行文件压缩成 .zip，带有项目名和版本号
+      - name: Compress Windows executable to .zip
+        run: zip yi_test_windows_${{ github.ref_name }}.zip windows_dist/main.exe
+
+      # 创建 GitHub Release，包含命名好的压缩包
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            windows_dist/main.exe  # 解压后的 Windows 可执行文件路径
-            mac_dist/main  # 解压后的 Mac 可执行文件路径
+            yi_test_windows_${{ github.ref_name }}.zip
+            yi_test_mac_${{ github.ref_name }}.tar.gz
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 使用 GitHub secrets 中的 token 来创建 release
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
